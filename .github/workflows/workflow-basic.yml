@@ -1,0 +1,23 @@
+name: JamfNotificationsBasic Job
+
+on:
+  schedule:
+    - cron: '0 13 * * 1'   # Mondays 13:00 UTC
+  workflow_dispatch:
+
+jobs:
+  get-notifications-from-jamf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Jamf notifications check
+        env:
+          CLIENT_NAME_BASIC: ${{ vars.CLIENT_NAME_BASIC }}
+          JAMF_PRO_URL_BASIC: ${{ vars.JAMF_PRO_URL_BASIC }}
+          CLIENT_ID_BASIC: ${{ secrets.CLIENT_ID_BASIC }}
+          CLIENT_SECRET_BASIC: ${{ secrets.CLIENT_SECRET_BASIC }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          chmod +x jamfNotificationsBasic.sh
+          ./jamfNotificationsBasic.sh
