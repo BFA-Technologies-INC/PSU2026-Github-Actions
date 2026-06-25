@@ -1,12 +1,11 @@
 #!/bin/bash
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Program: jamfNotificationsBasic.sh
+# Program: jamfNotificationsBasic-Local.sh
 # BFA Technologies on 2 June 2026
 #
 # Purpose:
 # Check for any specified notification that may be present on a Jamf Pro Server
-# and post it to a Slack channel via an incoming webhook.
 # List of available notifications can be found at
 # https://developer.jamf.com/jamf-pro/reference/delete_v1-notifications-type-id
 #
@@ -15,34 +14,33 @@
 # https://github.com/robjschroeder/Jamf-API-Scripts/blob/main/api-GetJPNotifications.sh
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #
-# Required env vars:
-#   CLIENT_NAME_BASIC    - friendly name for the tenant (used in the Slack message)
-#   JAMF_PRO_URL_BASIC   - Jamf Pro URL (e.g. https://yourorg.jamfcloud.com)
-#   CLIENT_ID_BASIC      - API client ID
-#   CLIENT_SECRET_BASIC  - API client secret
-#   SLACK_WEBHOOK_URL    - Slack incoming webhook URL
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# VARIABLES
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-set -euo pipefail
+JAMF_PRO_URL_BASIC="https://bfatechnolbrianjxitq.jamfcloud.com"
+CLIENT_ID_BASIC="c316ce55-9624-4ef9-ac8c-eb4c42814834"   
+CLIENT_SECRET_BASIC="EhSpepfhJkhWoUVAgDVmwA3VXoWOfG-COxFVwsVdO1UMZc0aN6aEKKyShXoNkrDW"
+slackWebhookURL="https://hooks.slack.com/services/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"
 
 # Notifications that should trigger a Slack message
 notifications=(
-  APNS_CERT_REVOKED
-  APNS_CONNECTION_FAILURE
-  APPLE_SCHOOL_MANAGER_T_C_NOT_SIGNED
-  BUILT_IN_CA_EXPIRED
-  BUILT_IN_CA_EXPIRING
-  DEP_INSTANCE_EXPIRED
-  DEP_INSTANCE_WILL_EXPIRE
-  DEVICE_ENROLLMENT_PROGRAM_T_C_NOT_SIGNED
-  PUSH_CERT_WILL_EXPIRE
-  PUSH_CERT_EXPIRED
-  SSO_CERT_WILL_EXPIRE
-  SSO_IDP_CERT_WILL_EXPIRE
-  VPP_ACCOUNT_EXPIRED
-  VPP_ACCOUNT_WILL_EXPIRE
+	APNS_CERT_REVOKED
+	APNS_CONNECTION_FAILURE
+	APPLE_SCHOOL_MANAGER_T_C_NOT_SIGNED
+	BUILT_IN_CA_EXPIRED
+	BUILT_IN_CA_EXPIRING
+	DEP_INSTANCE_EXPIRED
+	DEP_INSTANCE_WILL_EXPIRE
+	DEVICE_ENROLLMENT_PROGRAM_T_C_NOT_SIGNED
+	PUSH_CERT_WILL_EXPIRE
+	PUSH_CERT_EXPIRED
+	SSO_CERT_WILL_EXPIRE
+	SSO_IDP_CERT_WILL_EXPIRE
+	VPP_ACCOUNT_EXPIRED
+	VPP_ACCOUNT_WILL_EXPIRE
 )
-
-jamfURL="${JAMF_PRO_URL_BASIC%/}"
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # FUNCTIONS
@@ -55,7 +53,7 @@ jamfURL="${JAMF_PRO_URL_BASIC%/}"
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
 getAccessToken() {
-	response=$(curl --silent --location --request POST "${jamfURL}/api/v1/oauth/token" \
+	response=$(curl --silent --location --request POST "${JAMF_PRO_URL_BASIC}/api/v1/oauth/token" \
 		--header "Content-Type: application/x-www-form-urlencoded" \
 		--data-urlencode "client_id=${CLIENT_ID_BASIC}" \
 		--data-urlencode "grant_type=client_credentials" \
@@ -64,16 +62,16 @@ getAccessToken() {
 	token_expires_in=$(echo "$response" | plutil -extract expires_in raw -)
 	token_expiration_epoch=$(($current_epoch + $token_expires_in - 1))
 }
-
+#
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Check Token Expiration
 # This function checks whether the token has expired. If no token exists, or the expiration has passed, 
 # this function requests a new token and stores it in the $access_token variable.
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
+#
 checkTokenExpiration() {
 	current_epoch=$(date +%s)
-	if [[ $token_expiration_epoch -ge $current_epoch ]]
+	if [[ token_expiration_epoch -ge current_epoch ]]
 	then
 		echo "Token valid until the following epoch time: " "$token_expiration_epoch"
 	else
@@ -81,14 +79,15 @@ checkTokenExpiration() {
 		getAccessToken
 	fi
 }
-
+#
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Invalidate Token
 # This function invalidates the current token and checks that the process completed successfully.
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
+#
+#
 invalidateToken() {
-	responseCode=$(curl -w "%{http_code}" -H "Authorization: Bearer ${access_token}" "${jamfURL}/api/v1/auth/invalidate-token" -X POST -s -o /dev/null)
+	responseCode=$(curl -w "%{http_code}" -H "Authorization: Bearer ${access_token}" $JAMF_PRO_URL_BASIC/api/v1/auth/invalidate-token -X POST -s -o /dev/null)
 	if [[ ${responseCode} == 204 ]]
 	then
 		echo "Token successfully invalidated"
@@ -101,31 +100,44 @@ invalidateToken() {
 		echo "An unknown error occurred invalidating the token"
 	fi
 }
-
+#
+#
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 # Check for Notifications
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
+#
+#
 checkNotifications() {
-	notificationsData=$(curl -H "Authorization: Bearer $access_token" "${jamfURL}/api/v1/notifications" -X GET)
-	echo "$notificationsData"
+	
+	notificationsData=$(curl -s -H "Authorization: Bearer $access_token" "$url/api/v1/notifications") || return 1
+	instanceName=$(echo "$url" | sed -E 's#https?://##; s/\..*//' | tr '[:lower:]' '[:upper:]')
+	
+	for notification in "${notificationsArr[@]}"; do
+		if [[ "$notificationsData" == *"$notification"* ]]; then
+			cleanString="${notification//_/ }"
+			[[ "$cleanString" == "null" ]] && continue
+			message="${instanceName} Notification: ${cleanString}"
+			payload=$(cat <<EOF
+{
+	"text": "$message"
 }
-
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# Post to Slack webhook
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-postToSlack() {
-for n in "${notifications[@]}"; do
-  if [[ "${notificationsData}" == *"${n}"* ]]; then
-    message="${CLIENT_NAME_BASIC} Notification: ${n//_/ }"
-    echo "${message}"
-    curl -s -H "Content-Type: application/json" \
-      -d "{\"text\":\"${message}\"}" "${SLACK_WEBHOOK_URL}"
-  fi
-done
+EOF
+)
+			# Send any Notifications to a Slack 
+			curl -s -H "Content-Type: application/json" -d "$payload" "$slackWebhookURL"
+			
+		fi
+	done
 }
-token_expiration_epoch=0
+#
+#
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# MAIN
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#
+#
 checkTokenExpiration
-checkNotifications
-postToSlack
+checkNotifications 
 invalidateToken 
+
+
