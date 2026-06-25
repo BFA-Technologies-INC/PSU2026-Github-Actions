@@ -22,7 +22,7 @@
 JAMF_PRO_URL_BASIC="https://bfatechnolbrianjxitq.jamfcloud.com"
 CLIENT_ID_BASIC="c316ce55-9624-4ef9-ac8c-eb4c42814834"   
 CLIENT_SECRET_BASIC="EhSpepfhJkhWoUVAgDVmwA3VXoWOfG-COxFVwsVdO1UMZc0aN6aEKKyShXoNkrDW"
-slackWebhookURL="https://hooks.slack.com/services/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"
+slackWebhookURL="https://hooks.slack.com/services/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"
 
 # Notifications that should trigger a Slack message
 notificationsArr=(
