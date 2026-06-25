@@ -25,7 +25,7 @@ CLIENT_SECRET_BASIC="EhSpepfhJkhWoUVAgDVmwA3VXoWOfG-COxFVwsVdO1UMZc0aN6aEKKyShXo
 slackWebhookURL="https://hooks.slack.com/services/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"
 
 # Notifications that should trigger a Slack message
-notifications=(
+notificationsArr=(
 	APNS_CERT_REVOKED
 	APNS_CONNECTION_FAILURE
 	APPLE_SCHOOL_MANAGER_T_C_NOT_SIGNED
