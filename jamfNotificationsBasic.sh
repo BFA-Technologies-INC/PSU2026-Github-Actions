@@ -109,8 +109,8 @@ invalidateToken() {
 #
 checkNotifications() {
 	
-	notificationsData=$(curl -s -H "Authorization: Bearer $access_token" "$url/api/v1/notifications") || return 1
-	instanceName=$(echo "$url" | sed -E 's#https?://##; s/\..*//' | tr '[:lower:]' '[:upper:]')
+	notificationsData=$(curl -s -H "Authorization: Bearer $access_token" "${JAMF_PRO_URL_BASIC}/api/v1/notifications") || return 1
+	instanceName=$(echo "$JAMF_PRO_URL_BASIC" | sed -E 's#https?://##; s/\..*//' | tr '[:lower:]' '[:upper:]')
 	
 	for notification in "${notificationsArr[@]}"; do
 		if [[ "$notificationsData" == *"$notification"* ]]; then
