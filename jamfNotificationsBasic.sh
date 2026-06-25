@@ -16,15 +16,45 @@
 #
 #
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-# VARIABLES
+# Parse our command line arguments
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 
-JAMF_PRO_URL_BASIC="https://bfatechnolbrianjxitq.jamfcloud.com"
-CLIENT_ID_BASIC="c316ce55-9624-4ef9-ac8c-eb4c42814834"   
-CLIENT_SECRET_BASIC="EhSpepfhJkhWoUVAgDVmwA3VXoWOfG-COxFVwsVdO1UMZc0aN6aEKKyShXoNkrDW"
-slackWebhookURL="https://hooks.slack.com/services/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"
+while test $# -gt 0; do
+	case "$1" in
+		--instancesURL)
+			shift
+			JAMF_PRO_URL_BASIC="${1%/}"
+		;;
+		--clientid)
+			shift
+			CLIENT_ID_BASIC="$1"
+		;;
+		--clientsecret)
+			shift
+			CLIENT_SECRET_BASIC="$1"
+		;;
+		--webhook)
+			shift
+			slackWebhookURL="$1"
+		;;
+		*)
+			# Exit if we received an unknown option/flag/argument
+			[[ "$1" == --* ]] && echo "Unknown option/flag: $1" && exit 4
+			[[ "$1" != --* ]] && echo "Unknown argument: $1" && exit 4
+		;;
+	esac
+	shift
+done
 
-# Notifications that should trigger a Slack message
+# Bail if our required options are missing
+[[ -z "$JAMF_PRO_URL_BASIC" ]]   && echo "Error: Missing Jamf Pro URL (--instancesURL); exiting." && exit 1
+[[ -z "$CLIENT_ID_BASIC" ]]      && echo "Error: Missing Client ID (--clientid); exiting."        && exit 2
+[[ -z "$CLIENT_SECRET_BASIC" ]]  && echo "Error: Missing Client Secret (--clientsecret); exiting." && exit 3
+[[ -z "$slackWebhookURL" ]]     && echo "Error: Missing webhook URL (--webhook); exiting." && exit 5
+
+token_expiration_epoch=0
+
+# Jamf Notifications that should trigger a Slack message
 notificationsArr=(
 	APNS_CERT_REVOKED
 	APNS_CONNECTION_FAILURE
@@ -71,7 +101,7 @@ getAccessToken() {
 #
 checkTokenExpiration() {
 	current_epoch=$(date +%s)
-	if [[ token_expiration_epoch -ge current_epoch ]]
+	if [[ $token_expiration_epoch -ge $current_epoch ]]
 	then
 		echo "Token valid until the following epoch time: " "$token_expiration_epoch"
 	else

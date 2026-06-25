@@ -13,11 +13,14 @@ jobs:
 
       - name: Run Jamf notifications check
         env:
-          CLIENT_NAME_BASIC: ${{ vars.CLIENT_NAME_BASIC }}
           JAMF_PRO_URL_BASIC: ${{ vars.JAMF_PRO_URL_BASIC }}
           CLIENT_ID_BASIC: ${{ secrets.CLIENT_ID_BASIC }}
           CLIENT_SECRET_BASIC: ${{ secrets.CLIENT_SECRET_BASIC }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: |
           chmod +x jamfNotificationsBasic.sh
-          ./jamfNotificationsBasic.sh
+          ./jamfNotificationsBasic.sh \
+            --instancesURL "${JAMF_PRO_URL_BASIC}" \
+            --clientid "${CLIENT_ID_BASIC}" \
+            --clientsecret "${CLIENT_SECRET_BASIC}" \
+            --webhook "${SLACK_WEBHOOK_URL}" \
