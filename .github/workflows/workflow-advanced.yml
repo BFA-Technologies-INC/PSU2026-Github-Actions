@@ -1,0 +1,50 @@
+name: JamfNotificationsAdvanced Job
+
+on:
+  schedule:
+    - cron: '0 13 * * 1'   # Mondays 13:00 UTC
+  workflow_dispatch:
+
+jobs:
+  get-notifications-from-jamf:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tenant: ${{ fromJson(vars.JAMF_TENANTS_JSON) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Make the script executable
+        run: chmod +x jamfNotificationsAdvanced.sh
+
+      - name: Jamf notifications for ${{ matrix.tenant.name }}
+        env:
+          CLIENT_NAME: ${{ matrix.tenant.name }}
+          JAMF_PRO_ENDPOINT: ${{ matrix.tenant.jamfProURL }}
+          CLIENT_ID: ${{ vars[format('CLIENTID_{0}', matrix.tenant.client)] }}
+          CLIENT_SECRET: ${{ secrets[format('CLIENTSECRET_{0}', matrix.tenant.client)] }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          WEBHOOK_PLATFORM: ${{ vars.WEBHOOK_PLATFORM }}
+        run: |
+          if [[ -z "${JAMF_PRO_ENDPOINT}" ]]; then
+            echo "Skipping ${CLIENT_NAME}: jamfProURL is required."
+            exit 0
+          fi
+
+          if [[ -z "${CLIENT_ID}" || -z "${CLIENT_SECRET}" ]]; then
+            echo "::warning::Missing credentials for ${CLIENT_NAME}; skipping."
+            exit 0
+          fi
+
+          if [[ -z "${WEBHOOK_URL}" ]]; then
+            echo "::error::Missing WEBHOOK_URL secret; cannot send notifications."
+            exit 1
+          fi
+
+          ./jamfNotificationsAdvanced.sh \
+            --instancesURL "${JAMF_PRO_ENDPOINT}" \
+            --clientid "${CLIENT_ID}" \
+            --clientsecret "${CLIENT_SECRET}" \
+            --webhook "${WEBHOOK_URL}" \
+            --platform "${WEBHOOK_PLATFORM:-slack}"
