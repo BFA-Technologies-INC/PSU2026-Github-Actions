@@ -45,7 +45,8 @@ The instance name shown in the Slack message is pulled automatically from
 `JAMF_PRO_URL_BASIC` (e.g. `https://bfa.jamfcloud.com` → `BFA`) — there's no
 separate "client name" variable to set.
 
-> **Jamf API credentials:** create an API Role with read access to notifications,
+> **Jamf API credentials:** create an API Role with any (or none) permissions,
+> they are tycincally not needed for notifications API,
 > then an API Client tied to that role. Jamf Pro gives you the client ID and
 > secret. See Jamf's [client credentials docs](https://developer.jamf.com/jamf-pro/recipes/client-credentials-authorization).
 
@@ -69,6 +70,8 @@ The script posts one Slack message per match it finds among:
 - VPP (Volume Purchasing) token expired or expiring
 
 Edit the `notificationsArr` array in the script to add or remove types.
+List of available notifications can be found [here](https://developer.jamf.com/jamf-pro/reference/delete_v1-notifications-type-id).
+
 
 ---
 
