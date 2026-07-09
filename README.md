@@ -46,7 +46,7 @@ The instance name shown in the Slack message is pulled automatically from
 separate "client name" variable to set.
 
 > **Jamf API credentials:** create an API Role with any (or none) permissions,
-> they are tycincally not needed for notifications API,
+> none are needed for notifications API,
 > then an API Client tied to that role. Jamf Pro gives you the client ID and
 > secret. See Jamf's [client credentials docs](https://developer.jamf.com/jamf-pro/recipes/client-credentials-authorization).
 
@@ -99,28 +99,43 @@ following.
 | Name | Example | Description |
 |---|---|---|
 | `JAMF_TENANTS_JSON` | see below | JSON array describing each tenant to check |
-| `CLIENTID_<CLIENT>` | `abc123...` | Jamf Pro API client ID for tenant `<CLIENT>` |
+| `CLIENTID_<CLIENT>` | `abc123...` | Jamf Pro API client ID for tenant `<CLIENT>` (name must match the tenant's `client` value) |
 | `WEBHOOK_PLATFORM` | `slack` or `teams` | Optional — defaults to `slack` |
 
 `JAMF_TENANTS_JSON` example (one entry per tenant):
 
 ```json
 [
-  { "name": "Penn State - Main",     "jamfProURL": "https://psu.jamfcloud.com",         "client": "PSU_MAIN" },
-  { "name": "Penn State - Altoona",  "jamfProURL": "https://psualtoona.jamfcloud.com",  "client": "PSU_ALTOONA" }
+  { "name": "PSU", "client": "PSU", "jamfProURL": "psu" }
 ]
 ```
 
-The `client` field is a label you choose — it's used to look up that tenant's
-credentials: variable `CLIENTID_PSU_MAIN` and secret `CLIENTSECRET_PSU_MAIN`.
-Add one `CLIENTID_<CLIENT>` variable and one `CLIENTSECRET_<CLIENT>` secret per
-tenant in the JSON.
+- `name` — friendly name shown in the notification message.
+- `client` — a label you choose; it's used to build the names of the two
+  secrets/variables holding that tenant's credentials (see below).
+- `jamfProURL` — either the short Jamf Pro subdomain (`psu` → normalized to
+  `https://psu.jamfcloud.com`) or a full URL.
+
+Add one entry to the array per tenant you want checked.
+
+The workflow builds each tenant's credential names from its `client` value:
+
+```yaml
+CLIENT_ID: ${{ vars[format('CLIENTID_{0}', matrix.tenant.client)] }}
+CLIENT_SECRET: ${{ secrets[format('CLIENTSECRET_{0}', matrix.tenant.client)] }}
+WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+WEBHOOK_PLATFORM: ${{ vars.WEBHOOK_PLATFORM }}
+```
+
+So for `"client": "PSU"`, you must create a variable named exactly
+`CLIENTID_PSU` and a secret named exactly `CLIENTSECRET_PSU` — the names have
+to match the `client` value in the JSON, or that tenant will be skipped.
 
 **Secrets** (sensitive):
 
 | Name | Description |
 |---|---|
-| `CLIENTSECRET_<CLIENT>` | Jamf Pro API client secret for tenant `<CLIENT>` (one per tenant) |
+| `CLIENTSECRET_<CLIENT>` | Jamf Pro API client secret for tenant `<CLIENT>` (one per tenant, name must match) |
 | `WEBHOOK_URL` | Slack incoming webhook URL, or Teams Power Automate workflow URL |
 
 > **Jamf API credentials:** same as Basic — create an API Role with read access
@@ -147,3 +162,14 @@ Each match is labeled, given a severity (🔴 critical / 🟡 warning / 🔵 inf
 and rolled into one message per tenant — colored by the highest severity found.
 Edit `notificationsArr` (and `friendlyLabel`/`severityFor` if you want custom
 labels or severities) in the script to change what's tracked.
+
+---
+
+## Useful Links
+
+- [Runner costs](https://docs.github.com/en/billing/reference/actions-runner-pricing)
+- [Runner images and pre-installed tools](https://github.com/actions/runner-images)
+- [Jamf notifications list](https://developer.jamf.com/jamf-pro/reference/delete_v1-notifications-type-id)
+- [Creating a Slack webhook](https://docs.slack.dev/messaging/sending-messages-using-incoming-webhooks/)
+- [Creating a Teams webhook](https://support.microsoft.com/en-US/Workflows/send-messages-in-teams-using-incoming-webhooks)
+- [Jamf client ID and secret](https://learn.jamf.com/r/en-US/jamf-pro-documentation-current/API_Roles_and_Clients)
